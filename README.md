@@ -1,4 +1,4 @@
-# 🩺 Diabetes Type Identifier using CIT
+#  Diabetes Type Identifier using CIT
 
 
 This project is a Machine Learning web application that identifies the diabetes category:
@@ -17,14 +17,14 @@ The system uses a **Conditional Inference Tree (CIT)** classifier to predict dia
 
 
 
-## 🧠 Model Used
+##  Model Used
 
 * **Conditional Inference Tree (CIT)**
 * Multiclass Classification
 * Trained on a diabetes dataset
 
 
-## ⚙️ Tech Stack
+##  Tech Stack
 
 * Python
 * Flask
@@ -32,21 +32,21 @@ The system uses a **Conditional Inference Tree (CIT)** classifier to predict dia
 * Pandas
 * HTML/CSS
 
----
 
-## 🚀 How to Run
+
+##  How to Run
 
 ### 1️⃣ Clone the Repository
 
-```bash
+
 git clone https://github.com/krupa216/Diabetes_type_identifier.git
-```
+
 
 ### 2️⃣ Navigate to Project Folder
 
-```bash
+
 cd Diabetes_type_identifier
-```
+
 
 ### 3️⃣ Install Dependencies
 
@@ -67,7 +67,7 @@ http://127.0.0.1:5000/
 
 
 
-## 🎯 Output
+##  Output
 
 The model classifies the input data into:
 
