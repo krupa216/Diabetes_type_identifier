@@ -75,8 +75,8 @@ The model classifies the input data into:
 *  Prediabetes
 *  Diabetes
 
-  <img width="790" height="800" alt="Screenshot 2026-03-04 124506" src="https://github.com/user-attachments/assets/bad58d54-b232-4936-b885-bcd84f0a339a" />
-  <img width="1063" height="923" alt="Screenshot 2026-03-04 124237" src="https://github.com/user-attachments/assets/33a8a466-f736-447d-a6ef-0e4effe34733" />
+  <img width="400" height="800" alt="Screenshot 2026-03-04 124506" src="https://github.com/user-attachments/assets/bad58d54-b232-4936-b885-bcd84f0a339a" />
+  <img width="400" height="800" alt="Screenshot 2026-03-04 124237" src="https://github.com/user-attachments/assets/33a8a466-f736-447d-a6ef-0e4effe34733" />
 
   
 
