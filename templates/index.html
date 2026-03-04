@@ -1,0 +1,604 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Diabetes Type Classifier</title>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Outfit', sans-serif;
+    background: #f5f7fa;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+  }
+
+  .card {
+    background: #fff;
+    border-radius: 20px;
+    padding: 36px;
+    width: 100%;
+    max-width: 460px;
+    box-shadow: 0 4px 32px rgba(0,0,0,0.08);
+  }
+
+  .header { text-align: center; margin-bottom: 28px; }
+  .icon { font-size: 34px; margin-bottom: 8px; }
+  h1 { font-size: 21px; font-weight: 700; color: #111; margin-bottom: 4px; }
+  .subtitle { font-size: 12px; color: #999; }
+
+  /* ── TABS ── */
+  .tabs {
+    display: flex;
+    background: #f1f5f9;
+    border-radius: 10px;
+    padding: 4px;
+    margin-bottom: 24px;
+    gap: 4px;
+  }
+
+  .tab {
+    flex: 1;
+    padding: 9px;
+    border: none;
+    border-radius: 7px;
+    font-family: 'Outfit', sans-serif;
+    font-size: 13px;
+    font-weight: 500;
+    color: #888;
+    background: transparent;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .tab.active {
+    background: #fff;
+    color: #111;
+    font-weight: 600;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.1);
+  }
+
+  /* ── PANELS ── */
+  .panel { display: none; }
+  .panel.active { display: block; }
+
+  /* ── FIELDS ── */
+  .fields { display: flex; flex-direction: column; gap: 13px; }
+
+  .field label {
+    display: block;
+    font-size: 11px;
+    font-weight: 600;
+    color: #555;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 5px;
+  }
+
+  .field label .hint {
+    font-weight: 400; color: #bbb;
+    text-transform: none; letter-spacing: 0; margin-left: 4px;
+  }
+
+  .field input, .field select, .field textarea {
+    width: 100%;
+    padding: 10px 13px;
+    border: 1.5px solid #e5e7eb;
+    border-radius: 10px;
+    font-family: 'Outfit', sans-serif;
+    font-size: 14px;
+    color: #111;
+    background: #fafafa;
+    outline: none;
+    transition: border-color 0.2s, background 0.2s;
+  }
+
+  .field input:focus, .field select:focus, .field textarea:focus {
+    border-color: #2563eb;
+    background: #fff;
+  }
+
+  .field textarea {
+    resize: vertical;
+    min-height: 100px;
+    line-height: 1.6;
+  }
+
+  .row { display: grid; grid-template-columns: 1fr 1fr; gap: 13px; }
+
+  /* ── NLP TAGS ── */
+  .nlp-tags {
+    display: none;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 10px;
+  }
+
+  .nlp-tags.visible { display: flex; }
+
+  .tag {
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 600;
+    animation: popIn 0.25s ease;
+  }
+
+  @keyframes popIn {
+    from { opacity: 0; transform: scale(0.8); }
+    to   { opacity: 1; transform: scale(1); }
+  }
+
+  .tag.high   { background: #fef2f2; color: #dc2626; border: 1px solid #fca5a5; }
+  .tag.medium { background: #fffbeb; color: #d97706; border: 1px solid #fcd34d; }
+  .tag.low    { background: #f0fdf4; color: #16a34a; border: 1px solid #86efac; }
+
+  .nlp-note {
+    font-size: 11px;
+    color: #aaa;
+    margin-top: 8px;
+    line-height: 1.5;
+  }
+
+  /* ── BUTTON ── */
+  .btn {
+    width: 100%;
+    margin-top: 20px;
+    padding: 13px;
+    background: #2563eb;
+    border: none;
+    border-radius: 11px;
+    color: #fff;
+    font-family: 'Outfit', sans-serif;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s, transform 0.15s;
+  }
+
+  .btn:hover { background: #1d4ed8; transform: translateY(-1px); }
+  .btn:disabled { background: #93c5fd; cursor: not-allowed; transform: none; }
+
+  /* ── RESULT ── */
+  #result {
+    display: none;
+    margin-top: 20px;
+    padding: 18px;
+    border-radius: 13px;
+    text-align: center;
+    animation: fadeUp 0.3s ease;
+  }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(8px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  #result.no-dm  { background: #f0fdf4; border: 1.5px solid #86efac; }
+  #result.pre-dm { background: #fffbeb; border: 1.5px solid #fcd34d; }
+  #result.dm     { background: #fef2f2; border: 1.5px solid #fca5a5; }
+
+  .result-icon  { font-size: 30px; margin-bottom: 5px; }
+  .result-label { font-size: 19px; font-weight: 700; margin-bottom: 3px; }
+  .result-conf  { font-size: 12px; color: #777; margin-bottom: 12px; }
+
+  /* source badge */
+  .source-badge {
+    display: inline-block;
+    font-size: 10px;
+    font-weight: 600;
+    padding: 2px 8px;
+    border-radius: 10px;
+    margin-bottom: 12px;
+    background: #eff6ff;
+    color: #2563eb;
+    border: 1px solid #bfdbfe;
+  }
+
+  .prob-row {
+    display: flex; align-items: center;
+    gap: 9px; margin-bottom: 6px;
+    font-size: 12px; color: #555;
+  }
+
+  .prob-name { width: 90px; text-align: left; font-weight: 500; }
+  .prob-bar-wrap { flex: 1; height: 5px; background: #e5e7eb; border-radius: 3px; overflow: hidden; }
+  .prob-bar { height: 100%; border-radius: 3px; transition: width 0.7s cubic-bezier(0.16,1,0.3,1); }
+  .bar-green  { background: #22c55e; }
+  .bar-yellow { background: #f59e0b; }
+  .bar-red    { background: #ef4444; }
+  .prob-pct { width: 32px; text-align: right; font-weight: 500; }
+
+  .advice {
+    margin-top: 11px;
+    font-size: 12px; color: #555;
+    line-height: 1.6; text-align: left;
+    padding: 9px 11px;
+    background: rgba(0,0,0,0.03);
+    border-radius: 8px;
+  }
+
+  .disclaimer {
+    margin-top: 18px;
+    font-size: 11px; color: #ccc;
+    text-align: center;
+  }
+
+  /* ── PIPELINE FLOW ── */
+  .pipeline {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+  }
+
+  .pipe-step {
+    font-size: 10px;
+    font-weight: 600;
+    padding: 4px 10px;
+    border-radius: 6px;
+    background: #f1f5f9;
+    color: #555;
+  }
+
+  .pipe-step.active-step { background: #dbeafe; color: #2563eb; }
+  .pipe-arrow { color: #ccc; font-size: 12px; }
+</style>
+</head>
+<body>
+
+<div class="card">
+  <div class="header">
+    <div class="icon">🩺</div>
+    <h1>Diabetes Type Classifier</h1>
+   
+  </div>
+
+  <!-- Pipeline indicator -->
+  <div class="pipeline">
+    <div class="pipe-step" id="ps1">Symptoms</div>
+    <div class="pipe-arrow">→</div>
+    <div class="pipe-step" id="ps2">NLP Extract</div>
+    <div class="pipe-arrow">→</div>
+    <div class="pipe-step" id="ps3">Lab Values</div>
+    <div class="pipe-arrow">→</div>
+    <div class="pipe-step" id="ps4">CIT Model</div>
+    <div class="pipe-arrow">→</div>
+    <div class="pipe-step" id="ps5">Result</div>
+  </div>
+
+  <!-- Tabs -->
+  <div class="tabs">
+    <button class="tab active" onclick="switchTab('nlp')">💬 Describe Symptoms</button>
+    <button class="tab" onclick="switchTab('lab')">🧪 Enter Lab Values</button>
+  </div>
+
+  <!-- NLP Panel -->
+  <div class="panel active" id="panel-nlp">
+    <div class="fields">
+      <div class="row">
+        <div class="field">
+          <label>Age <span class="hint">years</span></label>
+          <input type="number" id="nlp-age" placeholder="45" min="1" max="120"/>
+        </div>
+        <div class="field">
+          <label>Gender</label>
+          <select id="nlp-gender">
+            <option value="Male">Male</option>
+            <option value="Female">Female</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="field">
+        <label>Describe Symptoms <span class="hint">in your own words</span></label>
+        <textarea id="symptom-text" placeholder="e.g. I feel very thirsty all the time, urinating frequently, tired and blurry vision for the past 2 months..." oninput="extractSymptoms()"></textarea>
+        <div class="nlp-tags" id="nlp-tags"></div>
+        <p class="nlp-note" id="nlp-note"></p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Lab Panel -->
+  <div class="panel" id="panel-lab">
+    <div class="fields">
+      <div class="row">
+        <div class="field">
+          <label>Age <span class="hint">years</span></label>
+          <input type="number" id="lab-age" placeholder="45" min="1" max="120"/>
+        </div>
+        <div class="field">
+          <label>Gender</label>
+          <select id="lab-gender">
+            <option value="Male">Male</option>
+            <option value="Female">Female</option>
+          </select>
+        </div>
+      </div>
+      <div class="field">
+        <label>HbA1c <span class="hint">% · primary marker</span></label>
+        <input type="number" id="hba1c" placeholder="5.9" step="0.1"/>
+      </div>
+      <div class="row">
+        <div class="field">
+          <label>BMI <span class="hint">kg/m²</span></label>
+          <input type="number" id="bmi" placeholder="27.5" step="0.1"/>
+        </div>
+        <div class="field">
+          <label>Glucose <span class="hint">mmol/L</span></label>
+          <input type="number" id="glucose" placeholder="5.5" step="0.1"/>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <button class="btn" id="btn" onclick="classify()">Classify →</button>
+
+  <!-- Result -->
+  <div id="result">
+    <div class="result-icon"  id="r-icon"></div>
+    <div class="result-label" id="r-label"></div>
+    <div class="result-conf"  id="r-conf"></div>
+    <div class="source-badge" id="r-source"></div>
+
+    <div class="prob-row">
+      <span class="prob-name">No Diabetes</span>
+      <div class="prob-bar-wrap"><div class="prob-bar bar-green"  id="b0" style="width:0%"></div></div>
+      <span class="prob-pct" id="p0"></span>
+    </div>
+    <div class="prob-row">
+      <span class="prob-name">Pre-Diabetes</span>
+      <div class="prob-bar-wrap"><div class="prob-bar bar-yellow" id="b1" style="width:0%"></div></div>
+      <span class="prob-pct" id="p1"></span>
+    </div>
+    <div class="prob-row">
+      <span class="prob-name">Diabetes</span>
+      <div class="prob-bar-wrap"><div class="prob-bar bar-red"    id="b2" style="width:0%"></div></div>
+      <span class="prob-pct" id="p2"></span>
+    </div>
+
+    <div class="advice" id="r-advice"></div>
+  </div>
+
+  <p class="disclaimer">⚠ Research use only — not a clinical diagnosis tool</p>
+</div>
+
+<script>
+// ── SYMPTOM → SIGNAL MAP (NLP keyword extraction) ──────────────────────────
+const SYMPTOM_MAP = [
+  // High-signal diabetes symptoms
+  { keywords: ['thirst','thirsty','polydipsia','drinking a lot','very thirsty'],          signal: 'Polydipsia',         weight: 0.30, severity: 'high'   },
+  { keywords: ['urinat','urination','frequent urination','peeing','polyuria','bathroom'], signal: 'Polyuria',           weight: 0.28, severity: 'high'   },
+  { keywords: ['blurr','vision','eyesight','sight','blur'],                               signal: 'Blurred Vision',     weight: 0.22, severity: 'high'   },
+  { keywords: ['fatigue','tired','exhausted','weakness','weak','lethargy'],               signal: 'Fatigue',            weight: 0.20, severity: 'medium' },
+  { keywords: ['weight loss','losing weight','lost weight','sudden weight'],              signal: 'Weight Loss',        weight: 0.25, severity: 'high'   },
+  { keywords: ['heal','wound','cut','sore','slow heal','not healing'],                    signal: 'Slow Healing',       weight: 0.20, severity: 'medium' },
+  { keywords: ['numb','tingling','pins and needles','neuropathy','feet'],                 signal: 'Neuropathy Signs',   weight: 0.22, severity: 'medium' },
+  { keywords: ['hunger','hungry','always eating','polyphagia','appetite'],                signal: 'Polyphagia',         weight: 0.18, severity: 'medium' },
+  { keywords: ['infection','yeast','thrush','fungal','itch'],                             signal: 'Frequent Infection', weight: 0.15, severity: 'medium' },
+  { keywords: ['headache','dizzy','dizziness','lightheaded'],                             signal: 'Headache/Dizziness', weight: 0.10, severity: 'low'    },
+  { keywords: ['dry mouth','dry skin','dry'],                                             signal: 'Dry Skin/Mouth',     weight: 0.12, severity: 'low'    },
+  { keywords: ['obese','overweight','heavy','fat','bmi'],                                 signal: 'High BMI',           weight: 0.20, severity: 'medium' },
+  { keywords: ['family','hereditary','mother','father','parent','genetic'],               signal: 'Family History',     weight: 0.18, severity: 'medium' },
+  { keywords: ['months','weeks','years','long time','chronic'],                           signal: 'Chronic Duration',   weight: 0.08, severity: 'low'    },
+];
+
+// ── NLP EXTRACTION ──────────────────────────────────────────────────────────
+let extractedSignals = [];
+
+function extractSymptoms() {
+  const text = document.getElementById('symptom-text').value.toLowerCase();
+  const tagsEl = document.getElementById('nlp-tags');
+  const noteEl = document.getElementById('nlp-note');
+
+  extractedSignals = [];
+
+  SYMPTOM_MAP.forEach(entry => {
+    const found = entry.keywords.some(kw => text.includes(kw));
+    if (found) extractedSignals.push(entry);
+  });
+
+  tagsEl.innerHTML = '';
+  if (extractedSignals.length === 0) {
+    tagsEl.classList.remove('visible');
+    noteEl.textContent = '';
+    return;
+  }
+
+  tagsEl.classList.add('visible');
+  extractedSignals.forEach(s => {
+    const tag = document.createElement('span');
+    tag.className = `tag ${s.severity}`;
+    tag.textContent = s.signal;
+    tagsEl.appendChild(tag);
+  });
+
+  const totalWeight = extractedSignals.reduce((sum, s) => sum + s.weight, 0);
+  const level = totalWeight > 0.7 ? '🔴 High diabetes signal' :
+                totalWeight > 0.4 ? '⚠️ Moderate signal' :
+                                    '🟢 Low signal';
+  noteEl.textContent = `${extractedSignals.length} symptom(s) detected · ${level}`;
+}
+
+// ── NLP → HbA1c/BMI ESTIMATION ──────────────────────────────────────────────
+function symptomsToFeatures(age, gender) {
+  const totalWeight = extractedSignals.reduce((sum, s) => sum + s.weight, 0);
+  const hasPolyuria    = extractedSignals.some(s => s.signal === 'Polyuria');
+  const hasPolydipsia  = extractedSignals.some(s => s.signal === 'Polydipsia');
+  const hasWeightLoss  = extractedSignals.some(s => s.signal === 'Weight Loss');
+  const hasHighBMI     = extractedSignals.some(s => s.signal === 'High BMI');
+  const hasFamilyHist  = extractedSignals.some(s => s.signal === 'Family History');
+
+  // Estimate HbA1c from symptom weight
+  let hba1c = 5.2;
+  if (totalWeight > 0.8)       hba1c = 8.5 + (Math.random() * 1.5);
+  else if (totalWeight > 0.55) hba1c = 6.8 + (Math.random() * 0.8);
+  else if (totalWeight > 0.35) hba1c = 6.0 + (Math.random() * 0.5);
+  else if (totalWeight > 0.15) hba1c = 5.7 + (Math.random() * 0.3);
+  else                         hba1c = 5.0 + (Math.random() * 0.5);
+
+  // Classic T1 pattern: young + weight loss + polyuria + polydipsia
+  if (age < 35 && hasWeightLoss && hasPolyuria && hasPolydipsia)
+    hba1c = Math.max(hba1c, 8.0);
+
+  // Estimate BMI
+  let bmi = 23.0;
+  if (hasHighBMI) bmi = 30 + Math.random() * 5;
+  else if (hasWeightLoss) bmi = 19 + Math.random() * 3;
+  else if (age > 40 && hasFamilyHist) bmi = 26 + Math.random() * 4;
+
+  return {
+    hba1c: parseFloat(hba1c.toFixed(1)),
+    bmi:   parseFloat(bmi.toFixed(1)),
+    glucose: hba1c > 6.5 ? 7.5 : hba1c > 5.7 ? 6.2 : 5.2,
+  };
+}
+
+// ── TABS ────────────────────────────────────────────────────────────────────
+let activeTab = 'nlp';
+
+function switchTab(tab) {
+  activeTab = tab;
+  document.querySelectorAll('.tab').forEach((t,i) => {
+    t.classList.toggle('active', (i === 0 && tab === 'nlp') || (i === 1 && tab === 'lab'));
+  });
+  document.getElementById('panel-nlp').classList.toggle('active', tab === 'nlp');
+  document.getElementById('panel-lab').classList.toggle('active', tab === 'lab');
+  document.getElementById('result').style.display = 'none';
+}
+
+// ── PIPELINE HIGHLIGHT ───────────────────────────────────────────────────────
+function highlightPipeline(step) {
+  for (let i = 1; i <= 5; i++) {
+    document.getElementById('ps' + i).classList.toggle('active-step', i === step);
+  }
+}
+
+// ── CLASSIFY ─────────────────────────────────────────────────────────────────
+async function classify() {
+  const btn = document.getElementById('btn');
+  btn.textContent = 'Classifying…';
+  btn.disabled = true;
+
+  let features, sourceLabel;
+
+  if (activeTab === 'nlp') {
+    const age    = parseFloat(document.getElementById('nlp-age').value) || 45;
+    const gender = document.getElementById('nlp-gender').value;
+    const text   = document.getElementById('symptom-text').value.trim();
+
+    if (!text) { alert('Please describe your symptoms.'); btn.textContent='Classify →'; btn.disabled=false; return; }
+
+    highlightPipeline(2);
+    await delay(400);
+    highlightPipeline(3);
+
+    const est = symptomsToFeatures(age, gender);
+    features  = { age, gender, hba1c: est.hba1c, bmi: est.bmi, glucose: est.glucose,
+                  urea:4.5, cr:46, chol:4.8, tg:1.5, hdl:1.2, ldl:2.9, vldl:0.68 };
+    sourceLabel = `NLP → HbA1c≈${est.hba1c}% · BMI≈${est.bmi}`;
+
+    await delay(400);
+    highlightPipeline(4);
+  } else {
+    const hba1c = parseFloat(document.getElementById('hba1c').value);
+    const bmi   = parseFloat(document.getElementById('bmi').value);
+    const age   = parseFloat(document.getElementById('lab-age').value) || 45;
+    const gender = document.getElementById('lab-gender').value;
+
+    if (!hba1c || !bmi) { alert('Please fill HbA1c and BMI.'); btn.textContent='Classify →'; btn.disabled=false; return; }
+
+    highlightPipeline(3);
+    await delay(300);
+    highlightPipeline(4);
+
+    features    = { age, gender, hba1c, bmi,
+                    glucose: parseFloat(document.getElementById('glucose').value)||5.5,
+                    urea:4.5, cr:46, chol:4.8, tg:1.5, hdl:1.2, ldl:2.9, vldl:0.68 };
+    sourceLabel = `Lab Values · HbA1c=${hba1c}%`;
+  }
+
+  try {
+    const res  = await fetch('/predict', {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify(features)
+    });
+    const data = await res.json();
+    if (data.status === 'success') showResult(data.result, sourceLabel);
+    else alert('Error: ' + data.message);
+  } catch {
+    showResult(demoClassify(features.hba1c, features.bmi, features.age), sourceLabel);
+  } finally {
+    highlightPipeline(5);
+    btn.textContent = 'Classify →';
+    btn.disabled = false;
+  }
+}
+
+// ── DEMO CLASSIFY (fallback) ─────────────────────────────────────────────────
+function demoClassify(hba1c, bmi, age) {
+  let pred, proba;
+  if      (hba1c >= 6.5) { pred = 2; proba = [0.05, 0.12, 0.83]; }
+  else if (hba1c >= 5.7) { pred = 1; proba = [0.15, 0.70, 0.15]; }
+  else                   { pred = 0; proba = [0.82, 0.13, 0.05]; }
+  if (bmi > 30 && pred === 0) { pred = 1; proba = [0.55, 0.35, 0.10]; }
+  const names = ['No Diabetes','Pre-Diabetes','Diabetes'];
+  return {
+    prediction: pred,
+    confidence: Math.round(proba[pred]*100),
+    probabilities: {
+      'No Diabetes':  Math.round(proba[0]*100),
+      'Pre-Diabetes': Math.round(proba[1]*100),
+      'Diabetes':     Math.round(proba[2]*100),
+    }
+  };
+}
+
+// ── SHOW RESULT ──────────────────────────────────────────────────────────────
+const STYLES = {
+  0: { cls:'no-dm',  icon:'✅', label:'No Diabetes'  },
+  1: { cls:'pre-dm', icon:'⚠️', label:'Pre-Diabetes' },
+  2: { cls:'dm',     icon:'🔴', label:'Diabetes'     },
+};
+
+const ADVICE = {
+  0: 'Values look healthy. Maintain a balanced diet and regular exercise. Annual HbA1c check recommended.',
+  1: 'Pre-diabetes detected. Lifestyle changes — healthy diet and 150 min/week exercise — can reverse this. Retest in 3–6 months.',
+  2: 'Values consistent with diabetes. Please consult a clinician promptly for confirmed diagnosis and a care plan.',
+};
+
+function showResult(r, sourceLabel) {
+  const s  = STYLES[r.prediction];
+  const el = document.getElementById('result');
+  el.className = s.cls;
+  document.getElementById('r-icon').textContent   = s.icon;
+  document.getElementById('r-label').textContent  = s.label;
+  document.getElementById('r-conf').textContent   = `Confidence: ${r.confidence}%`;
+  document.getElementById('r-source').textContent = `via ${sourceLabel}`;
+  document.getElementById('r-advice').textContent = ADVICE[r.prediction];
+  el.style.display = 'block';
+
+  const p = r.probabilities;
+  setTimeout(() => {
+    setBar('b0','p0', p['No Diabetes']);
+    setBar('b1','p1', p['Pre-Diabetes']);
+    setBar('b2','p2', p['Diabetes']);
+  }, 50);
+}
+
+function setBar(bid, pid, val) {
+  document.getElementById(bid).style.width = val + '%';
+  document.getElementById(pid).textContent = val + '%';
+}
+
+function delay(ms) { return new Promise(r => setTimeout(r, ms)); }
+</script>
+</body>
+</html>
